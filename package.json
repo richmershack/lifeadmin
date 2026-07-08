@@ -4,10 +4,22 @@
   "private": true,
   "description": "A personal command center for bills, renewals, documents, and deadlines.",
   "scripts": {
-    "start": "serve .",
-    "build": "node -e \"console.log('LifeAdmin is a static app. No build step required.')\""
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.86.0",
+    "next": "^16.1.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
-    "serve": "^14.2.4"
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.9.0"
   }
 }

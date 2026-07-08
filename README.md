@@ -2,33 +2,44 @@
 
 LifeAdmin is a personal command center for bills, renewals, documents, and deadlines.
 
-This first version is a static prototype with:
+This version is the first SaaS foundation:
 
-- Dashboard for urgent admin tasks
+- Next.js App Router
+- Supabase Auth
+- Supabase Postgres data storage
+- User-protected dashboard
 - Capture flow for pasted emails and notices
 - Review inbox for extracted items
-- Deadline calendar
-- Searchable vault
-- Local browser storage
+- Vault and deadline tracking
 
-## Run Locally
+## Local Setup
 
-Open `index.html` in a browser.
+```bash
+npm install
+npm run dev
+```
+
+Create `.env.local` from `.env.example`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
+
+## Supabase Setup
+
+1. Create a Supabase project.
+2. Open the SQL editor.
+3. Run `supabase/schema.sql`.
+4. Copy your project URL and anon key into Vercel environment variables.
 
 ## Deploy To Vercel
 
-Create a GitHub repository with the files in this folder, then import that repository into Vercel.
-
-Suggested Vercel settings:
-
-- Framework preset: Other
-- Build command: leave empty or use `npm run build`
-- Output directory: `.`
+Use the Next.js framework preset. Build command: `npm run build`.
 
 ## Next Product Steps
 
-- Add authentication
-- Store data in a database
 - Add real AI document extraction
-- Add reminders by email/SMS
-- Add Stripe payments
+- Add file uploads to Supabase Storage
+- Add reminder emails
+- Add Stripe subscriptions and usage limits
