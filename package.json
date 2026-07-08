@@ -1,0 +1,13 @@
+{
+  "name": "lifeadmin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A personal command center for bills, renewals, documents, and deadlines.",
+  "scripts": {
+    "start": "serve .",
+    "build": "node -e \"console.log('LifeAdmin is a static app. No build step required.')\""
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}
