@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LifeAdmin</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Main navigation">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">LA</div>
+          <div>
+            <strong>LifeAdmin</strong>
+            <span>Daily admin, handled</span>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="Sections">
+          <button class="nav-item active" data-view="dashboard" title="Dashboard">
+            <span aria-hidden="true">D</span>
+            <span>Dashboard</span>
+          </button>
+          <button class="nav-item" data-view="upload" title="Upload">
+            <span aria-hidden="true">+</span>
+            <span>Capture</span>
+          </button>
+          <button class="nav-item" data-view="inbox" title="Inbox">
+            <span aria-hidden="true">I</span>
+            <span>Inbox</span>
+          </button>
+          <button class="nav-item" data-view="calendar" title="Calendar">
+            <span aria-hidden="true">C</span>
+            <span>Calendar</span>
+          </button>
+          <button class="nav-item" data-view="vault" title="Vault">
+            <span aria-hidden="true">V</span>
+            <span>Vault</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-panel">
+          <span class="eyebrow">Plan</span>
+          <strong>Pro trial</strong>
+          <p>23 tracked items left this month.</p>
+        </div>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="dateLabel"></p>
+            <h1 id="viewTitle">Dashboard</h1>
+          </div>
+          <div class="top-actions">
+            <label class="search">
+              <span aria-hidden="true">?</span>
+              <input id="globalSearch" type="search" placeholder="Search documents, bills, renewals" />
+            </label>
+            <button class="primary-action" data-view="upload">Capture item</button>
+          </div>
+        </header>
+
+        <section class="view active" id="dashboard">
+          <div class="metrics-grid" id="metricsGrid"></div>
+          <div class="content-grid">
+            <section class="panel attention-panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Needs attention</span>
+                  <h2>Today and this week</h2>
+                </div>
+                <button class="ghost-button" id="markAllDone">Clear done</button>
+              </div>
+              <div id="attentionList" class="stack"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Money leak watch</span>
+                  <h2>Subscriptions and renewals</h2>
+                </div>
+              </div>
+              <div id="renewalList" class="stack compact"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="upload">
+          <div class="capture-layout">
+            <section class="panel capture-panel">
+              <span class="eyebrow">Capture</span>
+              <h2>Add a bill, renewal, contract, receipt, or notice</h2>
+              <p class="muted">Paste email text or describe a document. LifeAdmin will detect the key date, amount, company, and next action for review.</p>
+              <form id="captureForm">
+                <label>
+                  Item title
+                  <input id="captureTitle" type="text" placeholder="Example: Health insurance renewal" required />
+                </label>
+                <label>
+                  Document or email text
+                  <textarea id="captureText" placeholder="Paste a notice, invoice, email, or reminder here" required></textarea>
+                </label>
+                <div class="form-row">
+                  <label>
+                    Category
+                    <select id="captureCategory">
+                      <option>Bill</option>
+                      <option>Renewal</option>
+                      <option>Subscription</option>
+                      <option>Contract</option>
+                      <option>Warranty</option>
+                      <option>Tax document</option>
+                      <option>Appointment</option>
+                      <option>Other</option>
+                    </select>
+                  </label>
+                  <label>
+                    Due date
+                    <input id="captureDue" type="date" />
+                  </label>
+                </div>
+                <button class="primary-action" type="submit">Extract and review</button>
+              </form>
+            </section>
+
+            <section class="panel sample-panel">
+              <span class="eyebrow">Try this</span>
+              <h2>Sample capture</h2>
+              <p>Drop in realistic admin so the flow becomes obvious fast.</p>
+              <button class="ghost-button fillSample" type="button">Use insurance renewal</button>
+              <button class="ghost-button fillSample" type="button" data-sample="tax">Use tax payment notice</button>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="inbox">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">Review</span>
+                <h2>Extracted items waiting for approval</h2>
+              </div>
+            </div>
+            <div id="inboxList" class="stack"></div>
+          </section>
+        </section>
+
+        <section class="view" id="calendar">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">Upcoming</span>
+                <h2>Deadline calendar</h2>
+              </div>
+            </div>
+            <div id="calendarList" class="timeline"></div>
+          </section>
+        </section>
+
+        <section class="view" id="vault">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">Vault</span>
+                <h2>Saved documents and tasks</h2>
+              </div>
+              <select id="categoryFilter" aria-label="Filter by category">
+                <option value="All">All categories</option>
+                <option>Bill</option>
+                <option>Renewal</option>
+                <option>Subscription</option>
+                <option>Contract</option>
+                <option>Warranty</option>
+                <option>Tax document</option>
+                <option>Appointment</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div id="vaultGrid" class="vault-grid"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <template id="itemTemplate">
+      <article class="admin-item">
+        <div class="status-dot"></div>
+        <div class="item-main">
+          <div class="item-title-row">
+            <h3></h3>
+            <span class="pill"></span>
+          </div>
+          <p></p>
+          <div class="item-meta"></div>
+        </div>
+        <div class="item-actions"></div>
+      </article>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
