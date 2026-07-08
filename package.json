@@ -9,5 +9,8 @@
   },
   "devDependencies": {
     "serve": "^14.2.4"
+  },
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
   }
 }
