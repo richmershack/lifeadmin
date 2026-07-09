@@ -5,6 +5,7 @@ import {
   removeAdminItemDocument,
   reviewAdminItem,
   signOut,
+  updateAdminItemReminder,
   updateAdminItemStatus
 } from "@/app/actions";
 import { FileInput } from "@/app/components/file-input";
@@ -25,6 +26,14 @@ const categories = [
 ];
 
 const reviewCategories = categories.filter((category) => category !== "Auto-detect");
+const reminderOptions = [
+  { value: "0", label: "On due date" },
+  { value: "1", label: "1 day before" },
+  { value: "3", label: "3 days before" },
+  { value: "7", label: "1 week before" },
+  { value: "14", label: "2 weeks before" },
+  { value: "30", label: "1 month before" }
+];
 
 function todayAtNoon() {
   const today = new Date();
@@ -52,6 +61,35 @@ function formatToday() {
     day: "numeric",
     year: "numeric"
   }).format(todayAtNoon());
+}
+
+function getReminderDays(item: AdminItem) {
+  const match = item.note?.match(/\[reminder_days=(\d+)\]/);
+  const days = match ? Number(match[1]) : 7;
+  return Number.isFinite(days) ? days : 7;
+}
+
+function getReminderLabel(days: number) {
+  return reminderOptions.find((option) => Number(option.value) === days)?.label || "1 week before";
+}
+
+function getReminderStatus(item: AdminItem) {
+  const days = daysUntil(item.due_date);
+  const reminderDays = getReminderDays(item);
+
+  if (days < 0) {
+    return "Overdue";
+  }
+
+  if (days === 0) {
+    return "Due today";
+  }
+
+  if (days <= reminderDays) {
+    return `${days} days left`;
+  }
+
+  return `Starts ${getReminderLabel(reminderDays).toLowerCase()}`;
 }
 
 function ReviewItemCard({ item }: { item: AdminItem }) {
@@ -95,6 +133,16 @@ function ReviewItemCard({ item }: { item: AdminItem }) {
               Next action
               <input name="action" defaultValue={item.action} required />
             </label>
+            <label>
+              Reminder
+              <select name="reminderDays" defaultValue={String(getReminderDays(item))}>
+                {reminderOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
           <div className="review-actions">
             <div className="item-meta">
@@ -131,6 +179,7 @@ function ReviewItemCard({ item }: { item: AdminItem }) {
 function ItemCard({ item }: { item: AdminItem }) {
   const days = daysUntil(item.due_date);
   const urgency = days <= 3 ? "urgent" : days <= 14 ? "warning" : "";
+  const reminderDays = getReminderDays(item);
 
   return (
     <article className={`admin-item ${urgency}`}>
@@ -148,10 +197,24 @@ function ItemCard({ item }: { item: AdminItem }) {
           <span>{item.company || "Company pending"}</span>
           <span>{formatDate(item.due_date)}</span>
           <span>{item.amount || "Amount pending"}</span>
+          <span>Reminder: {getReminderLabel(reminderDays)}</span>
           {item.document_name ? <span>Attached: {item.document_name}</span> : null}
         </div>
       </div>
       <div className="item-actions">
+        <form action={updateAdminItemReminder} className="reminder-form">
+          <input name="id" type="hidden" value={item.id} />
+          <select aria-label={`Reminder timing for ${item.title}`} name="reminderDays" defaultValue={String(reminderDays)}>
+            {reminderOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <SubmitButton className="ghost-button" pendingLabel="Saving...">
+            Save
+          </SubmitButton>
+        </form>
         {item.document_name ? (
           <>
             <Link className="ghost-button action-button" href={`/documents/${item.id}`} target="_blank">
@@ -233,7 +296,10 @@ export default async function DashboardPage({
   const items = (data || []) as AdminItem[];
   const tracked = items.filter((item) => item.status === "tracked");
   const inbox = items.filter((item) => item.status === "inbox");
-  const attention = tracked.filter((item) => daysUntil(item.due_date) <= 14);
+  const reminders = tracked.filter((item) => daysUntil(item.due_date) <= getReminderDays(item));
+  const overdue = tracked.filter((item) => daysUntil(item.due_date) < 0);
+  const dueToday = tracked.filter((item) => daysUntil(item.due_date) === 0);
+  const attention = reminders.length ? reminders : tracked.filter((item) => daysUntil(item.due_date) <= 14);
   const renewals = tracked.filter((item) => ["Renewal", "Subscription"].includes(item.category));
 
   return (
@@ -258,6 +324,10 @@ export default async function DashboardPage({
           <a className="nav-item" href="#inbox">
             <span>I</span>
             <span>Inbox</span>
+          </a>
+          <a className="nav-item" href="#reminders">
+            <span>R</span>
+            <span>Reminders</span>
           </a>
           <a className="nav-item" href="#vault">
             <span>V</span>
@@ -295,8 +365,8 @@ export default async function DashboardPage({
           <div className="metrics-grid">
             <article className="metric">
               <span>Needs action</span>
-              <strong>{tracked.filter((item) => daysUntil(item.due_date) <= 7).length}</strong>
-              <span>due in the next 7 days</span>
+              <strong>{reminders.length}</strong>
+              <span>inside reminder windows</span>
             </article>
             <article className="metric">
               <span>Inbox</span>
@@ -309,9 +379,9 @@ export default async function DashboardPage({
               <span>worth checking</span>
             </article>
             <article className="metric">
-              <span>Tracked</span>
-              <strong>{tracked.length}</strong>
-              <span>active admin items</span>
+              <span>Overdue</span>
+              <strong>{overdue.length}</strong>
+              <span>{dueToday.length} due today</span>
             </article>
           </div>
 
@@ -347,6 +417,39 @@ export default async function DashboardPage({
                 )}
               </div>
             </section>
+          </div>
+        </section>
+
+        <section className="panel reminder-panel" id="reminders" style={{ marginTop: 18 }}>
+          <div className="panel-heading">
+            <div>
+              <span className="eyebrow">Reminders</span>
+              <h2>What needs your attention</h2>
+            </div>
+          </div>
+          <div className="reminder-board">
+            {tracked.length ? (
+              tracked.map((item) => {
+                const days = daysUntil(item.due_date);
+                const active = days <= getReminderDays(item);
+
+                return (
+                  <article className={`reminder-row ${active ? "active" : ""}`} key={item.id}>
+                    <div>
+                      <h3>{item.title}</h3>
+                      <p className="muted">{item.action}</p>
+                    </div>
+                    <div className="reminder-summary">
+                      <span className="pill">{getReminderStatus(item)}</span>
+                      <span>{formatDate(item.due_date)}</span>
+                      <span>{getReminderLabel(getReminderDays(item))}</span>
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <div className="empty-state">No reminders yet. Approve an extracted item to start tracking it.</div>
+            )}
           </div>
         </section>
 
@@ -386,6 +489,16 @@ export default async function DashboardPage({
                   <input name="dueDate" type="date" />
                 </label>
               </div>
+              <label>
+                Reminder
+                <select name="reminderDays" defaultValue="7">
+                  {reminderOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <label>
                 Next action
                 <input name="action" placeholder="Review before auto-renewal" />
