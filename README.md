@@ -11,7 +11,7 @@ This version is the first SaaS foundation:
 - User-protected dashboard
 - Capture flow for pasted emails and notices
 - File attachments for bills, renewals, receipts, and documents
-- AI extraction for pasted text and image uploads
+- AI extraction for pasted text, image uploads, and PDFs
 - Review inbox for extracted items
 - Vault and deadline tracking
 
@@ -63,6 +63,5 @@ The repo is now a Next.js app. Use:
 
 ## Next Product Steps
 
-- Add PDF text extraction
 - Add reminder emails
 - Add Stripe subscriptions and usage limits
