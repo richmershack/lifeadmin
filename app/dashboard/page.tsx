@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createAdminItem, signOut, updateAdminItemStatus } from "@/app/actions";
+import {
+  createAdminItem,
+  removeAdminItemDocument,
+  signOut,
+  updateAdminItemStatus
+} from "@/app/actions";
+import { SubmitButton } from "@/app/components/submit-button";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import type { AdminItem } from "@/lib/types";
 
@@ -63,20 +69,31 @@ function ItemCard({ item, inbox = false }: { item: AdminItem; inbox?: boolean })
           <span>{item.company || "Company pending"}</span>
           <span>{formatDate(item.due_date)}</span>
           <span>{item.amount || "Amount pending"}</span>
-          {item.document_name ? (
-            <Link href={`/documents/${item.id}`} target="_blank">
-              {item.document_name}
-            </Link>
-          ) : null}
+          {item.document_name ? <span>Attached: {item.document_name}</span> : null}
         </div>
       </div>
-      <form action={updateAdminItemStatus} className="item-actions">
-        <input name="id" type="hidden" value={item.id} />
-        <input name="status" type="hidden" value={inbox ? "tracked" : "done"} />
-        <button className="ghost-button" type="submit">
-          {inbox ? "Approve" : "Done"}
-        </button>
-      </form>
+      <div className="item-actions">
+        {item.document_name ? (
+          <>
+            <Link className="ghost-button action-button" href={`/documents/${item.id}`} target="_blank">
+              View file
+            </Link>
+            <form action={removeAdminItemDocument}>
+              <input name="id" type="hidden" value={item.id} />
+              <SubmitButton className="danger-button" pendingLabel="Removing...">
+                Remove file
+              </SubmitButton>
+            </form>
+          </>
+        ) : null}
+        <form action={updateAdminItemStatus}>
+          <input name="id" type="hidden" value={item.id} />
+          <input name="status" type="hidden" value={inbox ? "tracked" : "done"} />
+          <SubmitButton className="ghost-button" pendingLabel={inbox ? "Approving..." : "Saving..."}>
+            {inbox ? "Approve" : "Done"}
+          </SubmitButton>
+        </form>
+      </div>
     </article>
   );
 }
@@ -172,9 +189,9 @@ export default async function DashboardPage({
           <span className="eyebrow">Signed in</span>
           <strong>{user.email}</strong>
           <form action={signOut}>
-            <button className="danger-button" type="submit">
+            <SubmitButton className="danger-button" pendingLabel="Signing out...">
               Sign out
-            </button>
+            </SubmitButton>
           </form>
         </div>
       </aside>
@@ -293,9 +310,9 @@ export default async function DashboardPage({
                 Next action
                 <input name="action" placeholder="Review before auto-renewal" />
               </label>
-              <button className="primary-action" type="submit">
+              <SubmitButton className="primary-action" pendingLabel="Capturing...">
                 Extract and review
-              </button>
+              </SubmitButton>
             </form>
           </section>
 
@@ -314,9 +331,17 @@ export default async function DashboardPage({
                         <span>{item.category}</span>
                         <span>{item.status}</span>
                         {item.document_name ? (
-                          <Link href={`/documents/${item.id}`} target="_blank">
-                            View document
-                          </Link>
+                          <>
+                            <Link href={`/documents/${item.id}`} target="_blank">
+                              View document
+                            </Link>
+                            <form action={removeAdminItemDocument} className="inline-form">
+                              <input name="id" type="hidden" value={item.id} />
+                              <SubmitButton className="danger-link" pendingLabel="Removing...">
+                                Remove file
+                              </SubmitButton>
+                            </form>
+                          </>
                         ) : null}
                       </div>
                     </div>
