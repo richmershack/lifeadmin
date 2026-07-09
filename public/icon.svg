@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="LifeAdmin">
+  <rect width="512" height="512" rx="96" fill="#0f1d1a"/>
+  <rect x="72" y="72" width="368" height="368" rx="72" fill="#f4b942"/>
+  <path fill="#17211f" d="M144 343V169h44v136h82v38H144Zm142 0 63-174h50l63 174h-47l-10-33h-63l-10 33h-46Zm68-70h39l-19-64h-1l-19 64Z"/>
+</svg>
