@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { extractAdminItemWithAi } from "@/lib/openai/extract-admin-item";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import type { AdminItemStatus } from "@/lib/types";
 
@@ -79,28 +80,48 @@ export async function createAdminItem(formData: FormData) {
     redirect("/login");
   }
 
+  const fallbackDate = new Date().toISOString().slice(0, 10);
   const text = String(formData.get("sourceText") || "").trim();
-  const title = String(formData.get("title") || "").trim();
-  const category = String(formData.get("category") || "Other");
-  const dueDate = String(formData.get("dueDate") || new Date().toISOString().slice(0, 10));
-  const action = String(formData.get("action") || text.slice(0, 140) || "Review this item");
+  const userTitle = String(formData.get("title") || "").trim();
+  const userCategory = String(formData.get("category") || "").trim();
+  const userDueDate = String(formData.get("dueDate") || "").trim();
+  const userAction = String(formData.get("action") || "").trim();
   const document = formData.get("document");
+  const uploadedDocument = document instanceof File && document.size > 0 ? document : null;
+  const extracted = await extractAdminItemWithAi({
+    text,
+    document: uploadedDocument,
+    fallbackDate
+  });
+  const title =
+    userTitle ||
+    extracted?.title ||
+    (uploadedDocument?.name ? safeFileName(uploadedDocument.name) : "") ||
+    "Review captured item";
+  const category = userCategory || extracted?.category || "Other";
+  const dueDate = userDueDate || extracted?.dueDate || fallbackDate;
+  const action =
+    userAction ||
+    extracted?.action ||
+    extracted?.summary ||
+    text.slice(0, 140) ||
+    "Review this item";
   let documentName: string | null = null;
   let documentPath: string | null = null;
   let documentType: string | null = null;
 
-  if (document instanceof File && document.size > 0) {
-    if (document.size > maxDocumentBytes) {
+  if (uploadedDocument) {
+    if (uploadedDocument.size > maxDocumentBytes) {
       redirect("/dashboard?message=Document is too large. Use a file under 8 MB.");
     }
 
-    documentName = safeFileName(document.name || "document");
-    documentType = document.type || "application/octet-stream";
+    documentName = safeFileName(uploadedDocument.name || "document");
+    documentType = uploadedDocument.type || "application/octet-stream";
     documentPath = `${user.id}/${crypto.randomUUID()}-${documentName}`;
 
     const { error: uploadError } = await supabase!.storage
       .from(documentBucket)
-      .upload(documentPath, document, {
+      .upload(documentPath, uploadedDocument, {
         contentType: documentType,
         upsert: false
       });
@@ -114,11 +135,17 @@ export async function createAdminItem(formData: FormData) {
     user_id: user.id,
     title,
     category,
-    company: extractCompany(text),
+    company: extracted?.company || extractCompany(text),
     due_date: dueDate,
-    amount: extractAmount(text),
+    amount: extracted?.amount || extractAmount(text),
     action,
-    note: text ? "Captured from pasted text." : documentName ? "Captured from uploaded document." : null,
+    note: extracted
+      ? `AI extracted with ${extracted.confidence} confidence.${extracted.summary ? ` ${extracted.summary}` : ""}`
+      : text
+        ? "Captured from pasted text."
+        : documentName
+          ? "Captured from uploaded document."
+          : null,
     document_name: documentName,
     document_path: documentPath,
     document_type: documentType,
