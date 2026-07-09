@@ -11,6 +11,7 @@ This version is the first SaaS foundation:
 - User-protected dashboard
 - Capture flow for pasted emails and notices
 - File attachments for bills, renewals, receipts, and documents
+- AI extraction for pasted text and image uploads
 - Review inbox for extracted items
 - Vault and deadline tracking
 
@@ -27,6 +28,8 @@ Create `.env.local` from `.env.example`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-5-mini
 ```
 
 Run the app:
@@ -47,6 +50,8 @@ Required environment variables:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `OPENAI_API_KEY` for AI extraction
+- `OPENAI_MODEL` optional, defaults to `gpt-5-mini`
 
 ## Deploy To Vercel
 
@@ -58,6 +63,6 @@ The repo is now a Next.js app. Use:
 
 ## Next Product Steps
 
-- Add real AI document extraction
+- Add PDF text extraction
 - Add reminder emails
 - Add Stripe subscriptions and usage limits
