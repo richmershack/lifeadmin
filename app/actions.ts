@@ -153,3 +153,58 @@ export async function updateAdminItemStatus(formData: FormData) {
   await supabase.from("admin_items").update({ status }).eq("id", id).eq("user_id", user.id);
   revalidatePath("/dashboard");
 }
+
+export async function removeAdminItemDocument(formData: FormData) {
+  const id = String(formData.get("id") || "");
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    redirect("/dashboard?message=Add Supabase environment variables first.");
+  }
+
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: item, error: itemError } = await supabase
+    .from("admin_items")
+    .select("document_path")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (itemError) {
+    redirect(`/dashboard?message=${encodeURIComponent(itemError.message)}`);
+  }
+
+  if (item?.document_path) {
+    const { error: removeError } = await supabase.storage
+      .from(documentBucket)
+      .remove([item.document_path]);
+
+    if (removeError) {
+      redirect(`/dashboard?message=${encodeURIComponent(removeError.message)}`);
+    }
+  }
+
+  const { error } = await supabase
+    .from("admin_items")
+    .update({
+      document_name: null,
+      document_path: null,
+      document_type: null,
+      note: "Attached document removed."
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    redirect(`/dashboard?message=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/dashboard");
+}
