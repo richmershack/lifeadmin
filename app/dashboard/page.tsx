@@ -11,6 +11,7 @@ import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/serve
 import type { AdminItem } from "@/lib/types";
 
 const categories = [
+  "Auto-detect",
   "Bill",
   "Renewal",
   "Subscription",
@@ -278,14 +279,14 @@ export default async function DashboardPage({
             <form action={createAdminItem}>
               <label>
                 Item title
-                <input name="title" placeholder="Health insurance renewal" required />
+                <input name="title" placeholder="Health insurance renewal" />
               </label>
               <label>
                 Document or email text
                 <textarea name="sourceText" placeholder="Paste a notice, invoice, email, or reminder here" />
               </label>
               <label>
-                Attach document
+                Attach document or image
                 <input
                   accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.doc,.docx"
                   name="document"
@@ -295,22 +296,24 @@ export default async function DashboardPage({
               <div className="form-row">
                 <label>
                   Category
-                  <select name="category" defaultValue="Renewal">
+                  <select name="category" defaultValue="">
                     {categories.map((category) => (
-                      <option key={category}>{category}</option>
+                      <option key={category} value={category === "Auto-detect" ? "" : category}>
+                        {category}
+                      </option>
                     ))}
                   </select>
                 </label>
                 <label>
                   Due date
-                  <input name="dueDate" type="date" required />
+                  <input name="dueDate" type="date" />
                 </label>
               </div>
               <label>
                 Next action
                 <input name="action" placeholder="Review before auto-renewal" />
               </label>
-              <SubmitButton className="primary-action" pendingLabel="Capturing...">
+              <SubmitButton className="primary-action" pendingLabel="Extracting...">
                 Extract and review
               </SubmitButton>
             </form>
