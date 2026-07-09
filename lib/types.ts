@@ -10,6 +10,23 @@ export type AdminItem = {
   amount: string | null;
   action: string;
   note: string | null;
+  document_name: string | null;
+  document_path: string | null;
+  document_type: string | null;
   status: AdminItemStatus;
   created_at: string;
+};
+
+export type AdminItemInsert = {
+  title: string;
+  category: string;
+  company?: string | null;
+  due_date: string;
+  amount?: string | null;
+  action: string;
+  note?: string | null;
+  document_name?: string | null;
+  document_path?: string | null;
+  document_type?: string | null;
+  status?: AdminItemStatus;
 };
