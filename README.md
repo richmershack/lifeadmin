@@ -7,16 +7,19 @@ This version is the first SaaS foundation:
 - Next.js App Router
 - Supabase Auth
 - Supabase Postgres data storage
+- Supabase private document storage
 - User-protected dashboard
 - Capture flow for pasted emails and notices
+- File attachments for bills, renewals, receipts, and documents
 - Review inbox for extracted items
 - Vault and deadline tracking
 
 ## Local Setup
 
+Install dependencies:
+
 ```bash
 npm install
-npm run dev
 ```
 
 Create `.env.local` from `.env.example`:
@@ -26,20 +29,35 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
+Run the app:
+
+```bash
+npm run dev
+```
+
 ## Supabase Setup
 
 1. Create a Supabase project.
 2. Open the SQL editor.
 3. Run `supabase/schema.sql`.
-4. Copy your project URL and anon key into Vercel environment variables.
+4. The schema creates the `admin_items` table and the private `lifeadmin-documents` storage bucket.
+5. Copy your project URL and publishable key into Vercel environment variables.
+
+Required environment variables:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 ## Deploy To Vercel
 
-Use the Next.js framework preset. Build command: `npm run build`.
+The repo is now a Next.js app. Use:
+
+- Framework preset: Next.js
+- Build command: `npm run build`
+- Output directory: leave default
 
 ## Next Product Steps
 
 - Add real AI document extraction
-- Add file uploads to Supabase Storage
 - Add reminder emails
 - Add Stripe subscriptions and usage limits
