@@ -181,6 +181,60 @@ export async function updateAdminItemStatus(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
+export async function reviewAdminItem(formData: FormData) {
+  const id = String(formData.get("id") || "");
+  const title = String(formData.get("title") || "").trim();
+  const category = String(formData.get("category") || "Other").trim() || "Other";
+  const company = String(formData.get("company") || "").trim() || null;
+  const dueDate = String(formData.get("dueDate") || "").trim();
+  const amount = String(formData.get("amount") || "").trim() || null;
+  const action = String(formData.get("action") || "").trim();
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    redirect("/dashboard?message=Add Supabase environment variables first.");
+  }
+
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  if (!id || !title || !dueDate || !action) {
+    redirect("/dashboard?view=inbox&message=Title, due date, and next action are required before approving.");
+  }
+
+  const parsedDueDate = new Date(`${dueDate}T12:00:00`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate) || Number.isNaN(parsedDueDate.getTime())) {
+    redirect("/dashboard?view=inbox&message=Use a valid due date before approving.");
+  }
+
+  const { error } = await supabase
+    .from("admin_items")
+    .update({
+      title,
+      category,
+      company,
+      due_date: dueDate,
+      amount,
+      action,
+      status: "tracked",
+      note: "Reviewed and approved by user."
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    redirect(`/dashboard?view=inbox&message=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/dashboard");
+  redirect("/dashboard#vault");
+}
+
 export async function removeAdminItemDocument(formData: FormData) {
   const id = String(formData.get("id") || "");
   const supabase = await createSupabaseServerClient();
