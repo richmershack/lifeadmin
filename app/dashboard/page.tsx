@@ -6,6 +6,7 @@ import {
   signOut,
   updateAdminItemStatus
 } from "@/app/actions";
+import { FileInput } from "@/app/components/file-input";
 import { SubmitButton } from "@/app/components/submit-button";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import type { AdminItem } from "@/lib/types";
@@ -287,10 +288,9 @@ export default async function DashboardPage({
               </label>
               <label>
                 Attach document or image
-                <input
+                <FileInput
                   accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.doc,.docx"
                   name="document"
-                  type="file"
                 />
               </label>
               <div className="form-row">
