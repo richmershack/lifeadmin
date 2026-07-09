@@ -120,31 +120,27 @@ async function sendReminderEmail(to: string, item: AdminItem) {
   }
 }
 
-function redirectWithMessage(message: string) {
-  redirect(`/dashboard?message=${encodeURIComponent(message)}#reminders`);
-}
-
 export async function sendReminderEmailsNow() {
   console.log("[reminders:manual] started");
   const supabase = await createSupabaseServerClient();
 
   if (!supabase) {
-    redirectWithMessage("Add Supabase environment variables first.");
+    redirect("/dashboard?message=Add Supabase environment variables first.#reminders");
   }
 
   const {
     data: { user }
-  } = await supabase.auth.getUser();
+  } = await supabase!.auth.getUser();
 
   if (!user) {
     redirect("/login");
   }
 
   if (!user.email) {
-    redirectWithMessage("Your account needs an email address before reminders can send.");
+    redirect("/dashboard?message=Your account needs an email address before reminders can send.#reminders");
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from("admin_items")
     .select("*")
     .eq("user_id", user.id)
@@ -153,7 +149,7 @@ export async function sendReminderEmailsNow() {
 
   if (error) {
     console.error("[reminders:manual] item lookup failed", { error: error.message });
-    redirectWithMessage(error.message);
+    redirect(`/dashboard?message=${encodeURIComponent(error.message)}#reminders`);
   }
 
   const dueItems = ((data || []) as AdminItem[]).filter((item) => {
@@ -168,14 +164,14 @@ export async function sendReminderEmailsNow() {
   });
 
   if (!dueItems.length) {
-    redirectWithMessage("No due reminders to email yet. Approve an item and set its due date to today, then try again.");
+    redirect("/dashboard?message=No due reminders to email yet. Approve an item and set its due date to today, then try again.#reminders");
   }
 
   try {
     for (const item of dueItems.slice(0, 5)) {
       console.log("[reminders:manual] sending email", { itemId: item.id, to: user.email });
       await sendReminderEmail(user.email, item);
-      await supabase
+      await supabase!
         .from("admin_items")
         .update({ note: withLastEmailDate(item.note) })
         .eq("id", item.id)
@@ -184,10 +180,10 @@ export async function sendReminderEmailsNow() {
   } catch (sendError) {
     const message = sendError instanceof Error ? sendError.message : "Reminder email could not be sent.";
     console.error("[reminders:manual] send failed", { message });
-    redirectWithMessage(message);
+    redirect(`/dashboard?message=${encodeURIComponent(message)}#reminders`);
   }
 
   revalidatePath("/dashboard");
   console.log("[reminders:manual] completed", { sent: Math.min(dueItems.length, 5) });
-  redirectWithMessage(`Sent ${Math.min(dueItems.length, 5)} reminder email(s).`);
+  redirect(`/dashboard?message=${encodeURIComponent(`Sent ${Math.min(dueItems.length, 5)} reminder email(s).`)}#reminders`);
 }
