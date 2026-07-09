@@ -26,7 +26,9 @@ type ResponseOutput = {
 };
 
 const imageTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+const pdfTypes = new Set(["application/pdf"]);
 const maxImageBytesForAi = 4 * 1024 * 1024;
+const maxPdfBytesForAi = 8 * 1024 * 1024;
 
 const schema = {
   type: "object",
@@ -111,9 +113,9 @@ function getOutputText(payload: { output_text?: string; output?: ResponseOutput[
   return null;
 }
 
-async function fileToDataUrl(file: File) {
+async function fileToDataUrl(file: File, fallbackType?: string) {
   const buffer = Buffer.from(await file.arrayBuffer());
-  return `data:${file.type};base64,${buffer.toString("base64")}`;
+  return `data:${file.type || fallbackType || "application/octet-stream"};base64,${buffer.toString("base64")}`;
 }
 
 export async function extractAdminItemWithAi({
@@ -132,8 +134,17 @@ export async function extractAdminItemWithAi({
     document.size > 0 &&
     document.size <= maxImageBytesForAi &&
     imageTypes.has(document.type);
+  const canReadPdf =
+    document instanceof File &&
+    document.size > 0 &&
+    document.size <= maxPdfBytesForAi &&
+    (pdfTypes.has(document.type) || document.name.toLowerCase().endsWith(".pdf"));
 
-  const content: Array<{ type: "input_text"; text: string } | { type: "input_image"; image_url: string }> = [
+  const content: Array<
+    | { type: "input_text"; text: string }
+    | { type: "input_image"; image_url: string }
+    | { type: "input_file"; filename: string; file_data: string; detail: "low" | "high" }
+  > = [
     {
       type: "input_text",
       text: [
@@ -141,8 +152,13 @@ export async function extractAdminItemWithAi({
         "Return null for fields that are not clearly visible.",
         `Today's date is ${fallbackDate}.`,
         `Attached file name: ${documentName}`,
+        canReadPdf
+          ? "The attached PDF may contain billing, renewal, contract, receipt, or deadline details. Read the PDF before deciding."
+          : "",
         text ? `Pasted text:\n${text}` : "No pasted text was provided."
-      ].join("\n\n")
+      ]
+        .filter(Boolean)
+        .join("\n\n")
     }
   ];
 
@@ -150,6 +166,15 @@ export async function extractAdminItemWithAi({
     content.push({
       type: "input_image",
       image_url: await fileToDataUrl(document)
+    });
+  }
+
+  if (canReadPdf) {
+    content.push({
+      type: "input_file",
+      filename: document.name || "document.pdf",
+      file_data: await fileToDataUrl(document, "application/pdf"),
+      detail: "low"
     });
   }
 
