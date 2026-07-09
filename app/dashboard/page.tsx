@@ -63,6 +63,11 @@ function ItemCard({ item, inbox = false }: { item: AdminItem; inbox?: boolean })
           <span>{item.company || "Company pending"}</span>
           <span>{formatDate(item.due_date)}</span>
           <span>{item.amount || "Amount pending"}</span>
+          {item.document_name ? (
+            <Link href={`/documents/${item.id}`} target="_blank">
+              {item.document_name}
+            </Link>
+          ) : null}
         </div>
       </div>
       <form action={updateAdminItemStatus} className="item-actions">
@@ -262,6 +267,14 @@ export default async function DashboardPage({
                 Document or email text
                 <textarea name="sourceText" placeholder="Paste a notice, invoice, email, or reminder here" />
               </label>
+              <label>
+                Attach document
+                <input
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.doc,.docx"
+                  name="document"
+                  type="file"
+                />
+              </label>
               <div className="form-row">
                 <label>
                   Category
@@ -300,6 +313,11 @@ export default async function DashboardPage({
                       <div className="item-meta">
                         <span>{item.category}</span>
                         <span>{item.status}</span>
+                        {item.document_name ? (
+                          <Link href={`/documents/${item.id}`} target="_blank">
+                            View document
+                          </Link>
+                        ) : null}
                       </div>
                     </div>
                   </article>
