@@ -28,8 +28,8 @@ Create `.env.local` from `.env.example`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-5-mini
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-3.5-flash
 ```
 
 Run the app:
@@ -50,8 +50,10 @@ Required environment variables:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `OPENAI_API_KEY` for AI extraction
-- `OPENAI_MODEL` optional, defaults to `gpt-5-mini`
+- `GEMINI_API_KEY` for AI extraction
+- `GEMINI_MODEL` optional, defaults to `gemini-3.5-flash`
+- `OPENAI_API_KEY` optional fallback for AI extraction
+- `OPENAI_MODEL` optional fallback model, defaults to `gpt-5-mini`
 
 ## Deploy To Vercel
 
