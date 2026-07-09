@@ -387,6 +387,52 @@ h3 {
   display: none;
 }
 
+.reminder-form {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) auto;
+  gap: 8px;
+  margin: 0;
+}
+
+.reminder-form select {
+  min-height: 44px;
+}
+
+.reminder-board {
+  display: grid;
+  gap: 10px;
+}
+
+.reminder-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.reminder-row.active {
+  border-color: rgba(15, 118, 110, 0.28);
+  background: #ffffff;
+}
+
+.reminder-row p {
+  margin: 6px 0 0;
+}
+
+.reminder-summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .item-title-row,
 .item-meta,
 .item-actions {
@@ -537,7 +583,7 @@ textarea:focus {
   }
 
   .nav-list {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .nav-item {
@@ -576,8 +622,14 @@ textarea:focus {
 
   .form-row,
   .file-input-row,
+  .reminder-form,
+  .reminder-row,
   .review-grid,
   .timeline-row {
     grid-template-columns: 1fr;
+  }
+
+  .reminder-summary {
+    justify-content: flex-start;
   }
 }
