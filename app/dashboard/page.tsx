@@ -8,6 +8,7 @@ import {
   updateAdminItemReminder,
   updateAdminItemStatus
 } from "@/app/actions";
+import { sendReminderEmailsNow } from "@/app/reminder-actions";
 import { FileInput } from "@/app/components/file-input";
 import { SubmitButton } from "@/app/components/submit-button";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
@@ -426,6 +427,11 @@ export default async function DashboardPage({
               <span className="eyebrow">Reminders</span>
               <h2>What needs your attention</h2>
             </div>
+            <form action={sendReminderEmailsNow} className="inline-form">
+              <SubmitButton className="ghost-button" pendingLabel="Sending...">
+                Send email now
+              </SubmitButton>
+            </form>
           </div>
           <div className="reminder-board">
             {tracked.length ? (
