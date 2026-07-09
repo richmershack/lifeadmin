@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import {
   createAdminItem,
   removeAdminItemDocument,
+  reviewAdminItem,
   signOut,
   updateAdminItemStatus
 } from "@/app/actions";
@@ -22,6 +23,8 @@ const categories = [
   "Appointment",
   "Other"
 ];
+
+const reviewCategories = categories.filter((category) => category !== "Auto-detect");
 
 function todayAtNoon() {
   const today = new Date();
@@ -51,7 +54,81 @@ function formatToday() {
   }).format(todayAtNoon());
 }
 
-function ItemCard({ item, inbox = false }: { item: AdminItem; inbox?: boolean }) {
+function ReviewItemCard({ item }: { item: AdminItem }) {
+  const days = daysUntil(item.due_date);
+  const urgency = days <= 3 ? "urgent" : days <= 14 ? "warning" : "";
+
+  return (
+    <article className={`admin-item review-item ${urgency}`}>
+      <div className="status-dot" />
+      <div className="item-main">
+        <form action={reviewAdminItem} className="review-form">
+          <input name="id" type="hidden" value={item.id} />
+          <div className="review-grid">
+            <label>
+              Title
+              <input name="title" defaultValue={item.title} required />
+            </label>
+            <label>
+              Company
+              <input name="company" defaultValue={item.company || ""} placeholder="Company pending" />
+            </label>
+            <label>
+              Category
+              <select name="category" defaultValue={item.category || "Other"}>
+                {reviewCategories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Due date
+              <input name="dueDate" type="date" defaultValue={item.due_date} required />
+            </label>
+            <label>
+              Amount
+              <input name="amount" defaultValue={item.amount || ""} placeholder="Amount pending" />
+            </label>
+            <label>
+              Next action
+              <input name="action" defaultValue={item.action} required />
+            </label>
+          </div>
+          <div className="review-actions">
+            <div className="item-meta">
+              <span>{days < 0 ? "Overdue" : days === 0 ? "Today" : `${days} days`}</span>
+              {item.document_name ? <span>Attached: {item.document_name}</span> : null}
+            </div>
+            <div className="item-actions">
+              {item.document_name ? (
+                <>
+                  <Link className="ghost-button action-button" href={`/documents/${item.id}`} target="_blank">
+                    View file
+                  </Link>
+                  <button className="danger-link" form={`remove-${item.id}`} type="submit">
+                    Remove file
+                  </button>
+                </>
+              ) : null}
+              <SubmitButton className="primary-action" pendingLabel="Approving...">
+                Approve
+              </SubmitButton>
+            </div>
+          </div>
+        </form>
+        {item.document_name ? (
+          <form action={removeAdminItemDocument} id={`remove-${item.id}`}>
+            <input name="id" type="hidden" value={item.id} />
+          </form>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function ItemCard({ item }: { item: AdminItem }) {
   const days = daysUntil(item.due_date);
   const urgency = days <= 3 ? "urgent" : days <= 14 ? "warning" : "";
 
@@ -90,9 +167,9 @@ function ItemCard({ item, inbox = false }: { item: AdminItem; inbox?: boolean })
         ) : null}
         <form action={updateAdminItemStatus}>
           <input name="id" type="hidden" value={item.id} />
-          <input name="status" type="hidden" value={inbox ? "tracked" : "done"} />
-          <SubmitButton className="ghost-button" pendingLabel={inbox ? "Approving..." : "Saving..."}>
-            {inbox ? "Approve" : "Done"}
+          <input name="status" type="hidden" value="done" />
+          <SubmitButton className="ghost-button" pendingLabel="Saving...">
+            Done
           </SubmitButton>
         </form>
       </div>
@@ -264,7 +341,7 @@ export default async function DashboardPage({
               </div>
               <div className="stack">
                 {inbox.length ? (
-                  inbox.map((item) => <ItemCard inbox item={item} key={item.id} />)
+                  inbox.map((item) => <ReviewItemCard item={item} key={item.id} />)
                 ) : (
                   <div className="empty-state">No extracted items are waiting for approval.</div>
                 )}
