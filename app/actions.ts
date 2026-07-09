@@ -8,6 +8,8 @@ import type { AdminItemStatus } from "@/lib/types";
 
 const documentBucket = "lifeadmin-documents";
 const maxDocumentBytes = 8 * 1024 * 1024;
+const reminderOptions = new Set(["0", "1", "3", "7", "14", "30"]);
+const reminderTokenPattern = /\s*\[reminder_days=\d+\]\s*/g;
 
 function extractAmount(text: string) {
   const match = text.match(/\$[\d,]+(?:\.\d{2})?/);
@@ -24,6 +26,16 @@ function safeFileName(name: string) {
     .replace(/[^a-zA-Z0-9._-]+/g, "-")
     .replace(/-+/g, "-")
     .slice(0, 120);
+}
+
+function normalizeReminderDays(value: FormDataEntryValue | null) {
+  const days = String(value || "7").trim();
+  return reminderOptions.has(days) ? days : "7";
+}
+
+function withReminderToken(note: string | null, reminderDays: string) {
+  const cleanNote = (note || "").replace(reminderTokenPattern, " ").replace(/\s+/g, " ").trim();
+  return `${cleanNote ? `${cleanNote} ` : ""}[reminder_days=${reminderDays}]`;
 }
 
 export async function signIn(formData: FormData) {
@@ -86,6 +98,7 @@ export async function createAdminItem(formData: FormData) {
   const userCategory = String(formData.get("category") || "").trim();
   const userDueDate = String(formData.get("dueDate") || "").trim();
   const userAction = String(formData.get("action") || "").trim();
+  const reminderDays = normalizeReminderDays(formData.get("reminderDays"));
   const document = formData.get("document");
   const uploadedDocument = document instanceof File && document.size > 0 ? document : null;
   const extracted = await extractAdminItemWithAi({
@@ -131,6 +144,14 @@ export async function createAdminItem(formData: FormData) {
     }
   }
 
+  const note = extracted
+    ? `AI extracted with ${extracted.confidence} confidence.${extracted.summary ? ` ${extracted.summary}` : ""}`
+    : text
+      ? "Captured from pasted text."
+      : documentName
+        ? "Captured from uploaded document."
+        : null;
+
   const { error } = await supabase!.from("admin_items").insert({
     user_id: user.id,
     title,
@@ -139,13 +160,7 @@ export async function createAdminItem(formData: FormData) {
     due_date: dueDate,
     amount: extracted?.amount || extractAmount(text),
     action,
-    note: extracted
-      ? `AI extracted with ${extracted.confidence} confidence.${extracted.summary ? ` ${extracted.summary}` : ""}`
-      : text
-        ? "Captured from pasted text."
-        : documentName
-          ? "Captured from uploaded document."
-          : null,
+    note: withReminderToken(note, reminderDays),
     document_name: documentName,
     document_path: documentPath,
     document_type: documentType,
@@ -189,6 +204,7 @@ export async function reviewAdminItem(formData: FormData) {
   const dueDate = String(formData.get("dueDate") || "").trim();
   const amount = String(formData.get("amount") || "").trim() || null;
   const action = String(formData.get("action") || "").trim();
+  const reminderDays = normalizeReminderDays(formData.get("reminderDays"));
   const supabase = await createSupabaseServerClient();
 
   if (!supabase) {
@@ -222,7 +238,7 @@ export async function reviewAdminItem(formData: FormData) {
       amount,
       action,
       status: "tracked",
-      note: "Reviewed and approved by user."
+      note: withReminderToken("Reviewed and approved by user.", reminderDays)
     })
     .eq("id", id)
     .eq("user_id", user.id);
@@ -233,6 +249,47 @@ export async function reviewAdminItem(formData: FormData) {
 
   revalidatePath("/dashboard");
   redirect("/dashboard#vault");
+}
+
+export async function updateAdminItemReminder(formData: FormData) {
+  const id = String(formData.get("id") || "");
+  const reminderDays = normalizeReminderDays(formData.get("reminderDays"));
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    redirect("/dashboard?message=Add Supabase environment variables first.");
+  }
+
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: item, error: itemError } = await supabase
+    .from("admin_items")
+    .select("note")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (itemError) {
+    redirect(`/dashboard?message=${encodeURIComponent(itemError.message)}`);
+  }
+
+  const { error } = await supabase
+    .from("admin_items")
+    .update({ note: withReminderToken(item?.note || null, reminderDays) })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    redirect(`/dashboard?message=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/dashboard");
 }
 
 export async function removeAdminItemDocument(formData: FormData) {
